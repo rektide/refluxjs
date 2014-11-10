@@ -11,13 +11,20 @@ describe('using the connect(...) mixin',function(){
     });
 
     describe("when calling without key",function(){
+        function triggerObject(){
+	}
+	triggerObject.prototype.ping = function(ping){
+            return ping === "ping" ? "pong" : undefined;
+        };
         var defaultdata = "DEFAULTDATA",
+            triggerdata = new triggerObject(),
             listenable = {
                 listen: sinon.spy(),
                 getDefaultData: sinon.stub().returns(defaultdata)
             },
             context = {setState: sinon.spy()},
             result = _.extend(context,connect(listenable));
+        triggerdata.foo = "bar";
 
         it("should add componentDidMount and WillUnmount",function(){
             assert.isFunction(context.componentDidMount);
@@ -39,6 +46,13 @@ describe('using the connect(...) mixin',function(){
 
         it("should store the subscription object correctly",function(){
             assert.equal(listenable,context.subscriptions[0].listenable);
+        });
+
+        it("should send listenable callback which assigns state correctly",function(){
+            listenable.listen.firstCall.args[0](triggerdata);
+            //console.log(context.setState.secondCall.args);
+            assert.equal("bar",context.setState.secondCall.args[0].foo);
+            assert.equal("pong",context.setState.secondCall.args[0].ping("ping"));
         });
 
     });
